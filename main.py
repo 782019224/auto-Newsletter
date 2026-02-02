@@ -37,7 +37,7 @@ def get_latest_news():
 def get_ai_report(news_data):
     print("正在让 Gemini 撰写分析报告...")
     genai.configure(api_key=GEMINI_KEY)
-    model = genai.GenerativeModel('gemini-pro')
+    model = genai.GenerativeModel('gemini-2.5-flash')
     
     today = datetime.now().strftime("%Y-%m-%d")
     
