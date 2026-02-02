@@ -1,0 +1,35 @@
+name: Economic Report Bot
+
+on:
+  # 1. 定时触发 (UTC时间)
+  # UTC 23:00 = 北京时间 07:00
+  schedule:
+    - cron: '0 23 * * *'
+  
+  # 2. 手动/口令触发
+  # 在 GitHub 网页或 App 上点按钮即可触发
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Report Script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
+        run: python main.py
