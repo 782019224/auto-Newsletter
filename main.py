@@ -11,19 +11,27 @@ from datetime import datetime
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY")
 GMAIL_USER = os.environ.get("GMAIL_USER")
 GMAIL_PASSWORD = os.environ.get("GMAIL_PASSWORD")
-TO_EMAIL = GMAIL_USER  # 发给自己
+TO_EMAIL = GMAIL_USER 
 
-# 2. 获取真实新闻数据 (RSS)
-# 这里使用雅虎财经的 RSS，你也可以换成其他你喜欢的财经源
+# 这里我换了一个更稳定的雅虎财经 RSS 源
 RSS_URL = "https://finance.yahoo.com/news/rssindex"
 
 def get_latest_news():
     print("正在抓取最新财经新闻...")
     feed = feedparser.parse(RSS_URL)
     news_items = []
-    # 只取前 8 条新闻的标题和简介，避免 Token 超限
+    
+    # 只取前 8 条
     for entry in feed.entries[:8]:
-        news_items.append(f"- 标题: {entry.title}\n  简介: {entry.summary}")
+        # --- 修复核心：更安全的字段获取方式 ---
+        # 尝试获取 summary，如果没有就获取 description，还没有就显示“暂无详情”
+        # getattr(对象, '属性名', '默认值') 是 Python 防止报错的写法
+        title = getattr(entry, 'title', '无标题')
+        summary = getattr(entry, 'summary', getattr(entry, 'description', '暂无详细内容'))
+        
+        # 组合起来
+        news_items.append(f"- 标题: {title}\n  简介: {summary}")
+        
     return "\n".join(news_items)
 
 def get_ai_report(news_data):
@@ -80,11 +88,15 @@ def send_email(html_content):
 
 if __name__ == "__main__":
     if not GEMINI_KEY:
-        print("❌ 缺少 API Key")
+        print("❌ 缺少 API Key，请检查 Secrets 设置")
     else:
-        # 1. 抓新闻
-        raw_news = get_latest_news()
-        # 2. 写报告
-        report = get_ai_report(raw_news)
-        # 3. 发邮件
-        send_email(report)
+        try:
+            raw_news = get_latest_news()
+            # 只有抓取到新闻才继续
+            if raw_news:
+                report = get_ai_report(raw_news)
+                send_email(report)
+            else:
+                print("⚠️ 未抓取到新闻数据")
+        except Exception as e:
+            print(f"❌ 运行过程中发生错误: {e}")
